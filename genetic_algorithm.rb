@@ -1,5 +1,6 @@
-require 'pry'
-require 'pry-debugger'
+require 'benchmark'
+#require 'pry'
+#require 'pry-debugger'
 # Genetic Algorithm in the Ruby Programming Language
 
 # The Clever Algorithms Project: http://www.CleverAlgorithms.com
@@ -23,15 +24,18 @@ end
 
 # =========================================
 
-def tournament_selection(population, tournment_size)
-  winner = population.sample
+def tournament_selection(population, tournment_size, num_periods, num_venues)
+  winner = rand(population.size)
 
   (1...tournment_size).each do
-    current = population.sample
-    current = population.sample while current == winner
+    current = rand(population.size)
+
+    while current == winner
+      current = rand(population.size)
+    end
 
     if (rand(3) % 3 == 0)
-      if current[:fitness] < winner[:fitness]
+      if population[current][:fitness] < population[winner][:fitness]
         winner = current
       end
     elsif (rand(3) % 3 == 1)
@@ -40,7 +44,10 @@ def tournament_selection(population, tournment_size)
     end
   end
 
-  return winner
+  new_individual = copy_timetable(population[winner], num_periods, num_venues)
+  new_individual[:fitness] = fitness(new_individual, num_periods, num_venues)
+
+  return new_individual
 end
 
 def new_row(value, period, first_venue, second_venue)
@@ -88,8 +95,8 @@ def random_row(sub_timetable, num_periods, first_clash)
   new_row(value, period, venue, venue)
 end
 
-def mutate!(timetable, s_mutations, num_periods, num_venues, num_classes, num_teachers)
-  s_mutations.times do |i|
+def mutate!(timetable, mutation_swaps, num_periods, num_venues, num_classes, num_teachers)
+  mutation_swaps.times do |i|
     type = rand < 0.5 ? :class : :teacher
     sub_timetable = timetable[type]
     if (first_clash = find_period_with_clash(sub_timetable, num_periods, num_venues))
@@ -111,7 +118,7 @@ def mutate!(timetable, s_mutations, num_periods, num_venues, num_classes, num_te
         )
         if second_clash
           if second_clash[:value] == missing
-            swap(first_clash, second_clash)
+            swap(first_clash, second_clash, sub_timetable)
             swapped = true
           else
             excluded << second_clash[:period]
@@ -145,11 +152,11 @@ def copy_timetable(timetable, num_periods, num_venues)
   copy
 end
 
-def reproduce(selected, s_mutations, num_periods, num_venues, num_classes, num_teachers)
+def reproduce(selected, mutation_swaps, num_periods, num_venues, num_classes, num_teachers)
   children = []
   selected.each_with_index do |parent, i|
     child = copy_timetable(parent, num_periods, num_venues)
-    mutate!(child, s_mutations, num_periods, num_venues, num_classes, num_teachers)
+    mutate!(child, mutation_swaps, num_periods, num_venues, num_classes, num_teachers)
     child[:fitness] = fitness(child, num_periods, num_venues)
     children << (child[:fitness] < parent[:fitness] ? child : parent)
     #break if children.size >= pop_size
@@ -312,10 +319,13 @@ def feasible?(timetable, num_periods, num_venues)
 end
 
 def search(requirements, num_teachers, num_classes, num_venues, num_periods,
-           max_gens, pop_size, s_mutations, scm_size, tournament_size)
+           max_gens, pop_size, mutation_swaps, scm_size, tournament_size)
+  #puts "beginning search..."
+  #puts "generate meetings"
   meetings = generate_requirements_list(requirements, num_teachers, num_classes, num_venues)
-  check_num_periods!(meetings, num_periods, num_venues)
+  #check_num_periods!(meetings, num_periods, num_venues)
 
+  #puts "generate initial population"
   population = []
   pop_size.times do
     candidates = []
@@ -324,15 +334,17 @@ def search(requirements, num_teachers, num_classes, num_venues, num_periods,
     end
     candidates.sort_by! {|timetable| timetable[:fitness] = fitness(timetable, num_periods, num_venues) }
     population << candidates.first
+    #puts "generated #{population.size} individuals"
   end
 
+  #puts "beginning generations"
   best = population.sort_by {|timetable| timetable[:fitness] }.first
   max_gens.times do |gen|
-    selected = Array.new(pop_size){|i| tournament_selection(population, tournament_size)}
-    children = reproduce(selected, s_mutations, num_periods, num_venues, num_classes, num_teachers)
+    #print "gen: #{gen}/#{max_gens}\r"
+    selected = Array.new(pop_size){ tournament_selection(population, tournament_size, num_periods, num_venues)}
+    children = reproduce(selected, mutation_swaps, num_periods, num_venues, num_classes, num_teachers)
     children.sort_by! {|timetable| timetable[:fitness] = fitness(timetable, num_periods, num_venues) }
     if children.first[:fitness] < best[:fitness]
-      puts "change best"
       best = children.first
     end
     population = children
@@ -342,32 +354,54 @@ def search(requirements, num_teachers, num_classes, num_venues, num_periods,
   return best
 end
 
-if __FILE__ == $0
-  # problem configuration
-  requirements = [
-    # venue 0
-    [0,1,1],
-    [2,0,2],
+def generate_requirements(num_teachers, num_classes, num_venues, num_periods)
+  requirements = []
+  num_venues.times do
+    venue = Array.new(num_classes) { [0] * num_teachers }
+    num_periods.times do
+      row = rand(num_classes)
+      col = rand(num_teachers)
+      venue[row][col] += 1
+    end
+    requirements += venue
+  end
+  requirements
+end
 
-    # venue 1
-    [0,0,0],
-    [0,3,3]
-  ]
-  num_teachers = 3
-  num_classes = 2
-  num_venues = 2
+if __FILE__ == $0
+  # problem hdtt4
+
+  # problem configuration
+  num_teachers = 4
+  num_classes = 4
+  num_venues = 4
 
   # algorithm configuration
-  max_gens = 200
-  num_periods = 6
-  pop_size = 50
-  scm_size = 10
+  max_gens = 50
+  num_periods = 30
+  pop_size = 1001
+  scm_size = 1
   tournament_size = 10
-  #p_crossover = 0.90
-  num_mutations_tries = 10
+  mutation_swaps = 10
+
+  #requirements = generate_requirements(num_teachers, num_classes, num_venues, num_periods)
+  #File.open('data/requirements.dat', 'w') {|file| file.write(Marshal.dump(requirements)) }
+  requirements = nil
+  File.open('data/requirements_hdtt4.dat', 'r') {|file| requirements = Marshal.load(file.read) }
   # execute the algorithm
-  best = search(requirements, num_teachers, num_classes, num_venues, num_periods,
-                max_gens, pop_size, num_mutations_tries, scm_size, tournament_size)
-  puts "done! Solution: f=#{best[:fitness]}"
-  print_tt best
+  20.times do |i|
+    srand i
+    best = nil
+    bm = Benchmark.measure do
+      best = search(requirements, num_teachers, num_classes, num_venues, num_periods,
+                    max_gens, pop_size, mutation_swaps, scm_size, tournament_size)
+    end
+    File.open("results/result_hdtt4_#{i}.txt", "w") do |file|
+      file.write("fitness: #{best[:fitness]}\n")
+      file.write(bm)
+      file.write('\n')
+    end
+  end
+  #puts "done! Solution: fitness = #{best[:fitness]}"
+  #print_tt best
 end
