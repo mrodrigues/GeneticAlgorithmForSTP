@@ -27,14 +27,25 @@ def onemax(bitstring)
   return sum
 end
 
-def random_bitstring(num_bits)
-  return (0...num_bits).inject(""){|s,i| s<<((rand<0.5) ? "1" : "0")}
-end
+def tournment_selection(population, tournment_size)
+  winner = population.sample
 
-def binary_tournament(pop)
-  i, j = rand(pop.size), rand(pop.size)
-  j = rand(pop.size) while j==i
-  return (pop[i][:fitness] > pop[j][:fitness]) ? pop[i] : pop[j]
+  (1...tournment_size).each do
+    current = population.sample
+    current = population.sample while current == winner
+
+    if (rand(3) % 3 == 0)
+      if current[:fitness] < winner[:fitness]
+        winner = current
+      end
+    elsif (rand(3) % 3 == 1)
+      # winner is not changed 
+    else
+      winner = current
+    end
+  end
+
+  return winner
 end
 
 def point_mutation(bitstring, rate=1.0/bitstring.size)
@@ -216,35 +227,31 @@ def fitness(timetable, num_periods, num_venues)
   fit
 end
 
-def search(requirements, num_teachers, num_classes, num_venues, num_periods, max_gens, num_pop, num_mutations_tries, scm_size)
+def search(requirements, num_teachers, num_classes, num_venues, num_periods, max_gens, pop_size, num_mutations_tries, scm_size)
   meetings = generate_requirements_list(requirements, num_teachers, num_classes, num_venues)
   check_num_periods!(meetings, num_periods, num_venues)
 
   population = []
-  num_pop.times do
+  pop_size.times do
     candidates = []
     scm_size.times do
       candidates << sequential_construction_method(meetings, num_periods, num_venues)
     end
-    candidates.sort_by! {|timetable| fitness(timetable, num_periods, num_venues) }
+    candidates.sort_by! {|timetable| timetable[:fitness] = fitness(timetable, num_periods, num_venues) }
     population << candidates.first
   end
-  #print_tt timetable
-  #population = Array.new(pop_size) do |i|
-  #  {:bitstring=>random_bitstring(num_bits)}
-  #end
-  #population.each{|c| c[:fitness] = onemax(c[:bitstring])}
-  #best = population.sort{|x,y| y[:fitness] <=> x[:fitness]}.first  
-  #max_gens.times do |gen|
-  #  selected = Array.new(pop_size){|i| binary_tournament(population)}
-  #  children = reproduce(selected, pop_size, p_crossover, p_mutation)    
+
+  best = population.sort_by {|timetable| timetable[:fitness] }.first
+  max_gens.times do |gen|
+    selected = Array.new(pop_size){|i| tournament_selection(population)}
+    children = reproduce(selected, pop_size, p_mutation)
   #  children.each{|c| c[:fitness] = onemax(c[:bitstring])}
   #  children.sort!{|x,y| y[:fitness] <=> x[:fitness]}
   #  best = children.first if children.first[:fitness] >= best[:fitness]
   #  population = children
   #  puts " > gen #{gen}, best: #{best[:fitness]}, #{best[:bitstring]}"
   #  break if best[:fitness] == num_bits
-  #end
+  end
   #return best
 end
 
@@ -266,11 +273,11 @@ if __FILE__ == $0
   # algorithm configuration
   max_gens = 200
   num_periods = 6
-  num_pop = 50
+  pop_size = 50
   scm_size = 10
   #p_crossover = 0.90
   num_mutations_tries = 10
   # execute the algorithm
-  best = search(requirements, num_teachers, num_classes, num_venues, num_periods, max_gens, num_pop, num_mutations_tries, scm_size)
+  best = search(requirements, num_teachers, num_classes, num_venues, num_periods, max_gens, pop_size, num_mutations_tries, scm_size)
   #puts "done! Solution: f=#{best[:fitness]}, s=#{best[:bitstring]}"
 end
