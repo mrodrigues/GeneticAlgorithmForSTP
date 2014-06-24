@@ -1,3 +1,5 @@
+require 'pry'
+require 'pry-debugger'
 # Genetic Algorithm in the Ruby Programming Language
 
 # The Clever Algorithms Project: http://www.CleverAlgorithms.com
@@ -21,13 +23,7 @@ end
 
 # =========================================
 
-def onemax(bitstring)
-  sum = 0
-  bitstring.size.times {|i| sum+=1 if bitstring[i].chr=='1'}
-  return sum
-end
-
-def tournment_selection(population, tournment_size)
+def tournament_selection(population, tournment_size)
   winner = population.sample
 
   (1...tournment_size).each do
@@ -39,22 +35,97 @@ def tournment_selection(population, tournment_size)
         winner = current
       end
     elsif (rand(3) % 3 == 1)
-      # winner is not changed 
-    else
       winner = current
+    # else winner is not changed 
     end
   end
 
   return winner
 end
 
-def point_mutation(bitstring, rate=1.0/bitstring.size)
-  child = ""
-   bitstring.size.times do |i|
-     bit = bitstring[i].chr
-     child << ((rand()<rate) ? ((bit=='1') ? "0" : "1") : bit)
+def new_row(value, period, first_venue, second_venue)
+  { value: value, period: period, venues: [first_venue, second_venue] }
+end
+
+def find_period_with_clash(sub_timetable, num_periods, num_venues, options = {})
+  excluded = options[:excluded] || []
+  venues   = options[:venues]   || []
+  venues_range = venues.empty? ? (0...num_venues) : venues
+  for i in 0...num_periods
+    if !excluded.include?(i)
+      for j in venues_range
+        value = sub_timetable[i][j]
+        for venue in 0...num_venues
+          if venue != j && sub_timetable[i][venue] == value
+            return new_row(value, i, j, venue)
+          end
+        end
+      end
+    end
   end
-  return child
+  return nil
+end
+
+def find_missing(sub_timetable, period, num_venues, elements)
+  missing = (0...elements).to_a
+  for j in 0...num_venues
+    missing.delete(sub_timetable[period][j])
+  end
+
+  return missing.first
+end
+
+def swap(first_clash, second_clash, sub_timetable)
+  venue = (first_clash[:venues] & second_clash[:venues]).first
+  sub_timetable[ first_clash[:period]][venue] = second_clash[:value]
+  sub_timetable[second_clash[:period]][venue] = first_clash[:value]
+end
+
+def random_row(sub_timetable, num_periods, first_clash)
+  period = ((0...num_periods).to_a - [first_clash[:period]]).sample
+  venue = first_clash[:venues].sample
+  value = sub_timetable[period][venue]
+  new_row(value, period, venue, venue)
+end
+
+def mutate!(timetable, s_mutations, num_periods, num_venues, num_classes, num_teachers)
+  s_mutations.times do |i|
+    type = rand < 0.5 ? :class : :teacher
+    sub_timetable = timetable[type]
+    if (first_clash = find_period_with_clash(sub_timetable, num_periods, num_venues))
+      missing = find_missing(sub_timetable,
+                             first_clash[:period],
+                             num_venues,
+                             type == :class ? num_classes : num_teachers)
+
+      excluded = [first_clash[:period]]
+      swapped = false
+      has_rows_with_clash = true
+      while !swapped && has_rows_with_clash && excluded.size < sub_timetable.size
+        second_clash = find_period_with_clash(
+          sub_timetable,
+          num_periods,
+          num_venues,
+          excluded: excluded,
+          venues: first_clash[:venues]
+        )
+        if second_clash
+          if second_clash[:value] == missing
+            swap(first_clash, second_clash)
+            swapped = true
+          else
+            excluded << second_clash[:period]
+          end
+        else
+          has_rows_with_clash = false
+        end
+      end
+
+      if !swapped
+        swap(first_clash, random_row(sub_timetable, num_periods, first_clash), sub_timetable)
+      end
+    end
+  end
 end
 
 def crossover(parent1, parent2, rate)
@@ -63,16 +134,25 @@ def crossover(parent1, parent2, rate)
   return parent1[0...point]+parent2[point...(parent1.size)]
 end
 
-def reproduce(selected, pop_size, p_cross, p_mutation)
-  children = []  
-  selected.each_with_index do |p1, i|
-    p2 = (i.modulo(2)==0) ? selected[i+1] : selected[i-1]
-    p2 = selected[0] if i == selected.size-1
-    child = {}
-    child[:bitstring] = crossover(p1[:bitstring], p2[:bitstring], p_cross)
-    child[:bitstring] = point_mutation(child[:bitstring], p_mutation)
-    children << child
-    break if children.size >= pop_size
+def copy_timetable(timetable, num_periods, num_venues)
+  copy = new_timetable(num_periods, num_venues)
+  for i in 0...num_periods
+    for j in 0...num_venues
+      copy[:class  ][i][j] = timetable[:class  ][i][j]
+      copy[:teacher][i][j] = timetable[:teacher][i][j]
+    end
+  end
+  copy
+end
+
+def reproduce(selected, s_mutations, num_periods, num_venues, num_classes, num_teachers)
+  children = []
+  selected.each_with_index do |parent, i|
+    child = copy_timetable(parent, num_periods, num_venues)
+    mutate!(child, s_mutations, num_periods, num_venues, num_classes, num_teachers)
+    child[:fitness] = fitness(child, num_periods, num_venues)
+    children << (child[:fitness] < parent[:fitness] ? child : parent)
+    #break if children.size >= pop_size
   end
   return children
 end
@@ -227,7 +307,12 @@ def fitness(timetable, num_periods, num_venues)
   fit
 end
 
-def search(requirements, num_teachers, num_classes, num_venues, num_periods, max_gens, pop_size, num_mutations_tries, scm_size)
+def feasible?(timetable, num_periods, num_venues)
+  fitness(timetable, num_periods, num_venues) == 0
+end
+
+def search(requirements, num_teachers, num_classes, num_venues, num_periods,
+           max_gens, pop_size, s_mutations, scm_size, tournament_size)
   meetings = generate_requirements_list(requirements, num_teachers, num_classes, num_venues)
   check_num_periods!(meetings, num_periods, num_venues)
 
@@ -243,16 +328,18 @@ def search(requirements, num_teachers, num_classes, num_venues, num_periods, max
 
   best = population.sort_by {|timetable| timetable[:fitness] }.first
   max_gens.times do |gen|
-    selected = Array.new(pop_size){|i| tournament_selection(population)}
-    children = reproduce(selected, pop_size, p_mutation)
-  #  children.each{|c| c[:fitness] = onemax(c[:bitstring])}
-  #  children.sort!{|x,y| y[:fitness] <=> x[:fitness]}
-  #  best = children.first if children.first[:fitness] >= best[:fitness]
-  #  population = children
-  #  puts " > gen #{gen}, best: #{best[:fitness]}, #{best[:bitstring]}"
-  #  break if best[:fitness] == num_bits
+    selected = Array.new(pop_size){|i| tournament_selection(population, tournament_size)}
+    children = reproduce(selected, s_mutations, num_periods, num_venues, num_classes, num_teachers)
+    children.sort_by! {|timetable| timetable[:fitness] = fitness(timetable, num_periods, num_venues) }
+    if children.first[:fitness] < best[:fitness]
+      puts "change best"
+      best = children.first
+    end
+    population = children
+    #puts " > gen #{gen}, best: #{best[:fitness]}"
+    break if feasible?(best, num_periods, num_venues)
   end
-  #return best
+  return best
 end
 
 if __FILE__ == $0
@@ -275,9 +362,12 @@ if __FILE__ == $0
   num_periods = 6
   pop_size = 50
   scm_size = 10
+  tournament_size = 10
   #p_crossover = 0.90
   num_mutations_tries = 10
   # execute the algorithm
-  best = search(requirements, num_teachers, num_classes, num_venues, num_periods, max_gens, pop_size, num_mutations_tries, scm_size)
-  #puts "done! Solution: f=#{best[:fitness]}, s=#{best[:bitstring]}"
+  best = search(requirements, num_teachers, num_classes, num_venues, num_periods,
+                max_gens, pop_size, num_mutations_tries, scm_size, tournament_size)
+  puts "done! Solution: f=#{best[:fitness]}"
+  print_tt best
 end
