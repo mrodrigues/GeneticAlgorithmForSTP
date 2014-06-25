@@ -1,5 +1,13 @@
 \begin{thebibliography}{1}
 
+\bibitem{Clever}
+Clever algorithms.
+\newblock \url{http://cleveralgorithms.com/nature-inspired/index.html}, 2014.
+
+\bibitem{Github}
+Repositório do projeto.
+\newblock \url{https://github.com/mrodrigues/GeneticAlgorithmForSTP}, 2014.
+
 \bibitem{Raghavjee:2008:GASTP}
 R.~Raghavjee and N.~Pillay.
 \newblock An application of genetic algorithms to the school timetabling

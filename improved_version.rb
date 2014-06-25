@@ -282,12 +282,11 @@ def random_period(timetable, meeting, num_periods)
   periods.sample
 end
 
-def sequential_construction_method(meetings, num_periods, num_venues)
+def sequential_construction_method(meetings, num_periods, num_venues, alpha)
   meetings = meetings.dup
   timetable = new_timetable(num_periods, num_venues)
   calculate_saturation_degree!(timetable, meetings, num_periods, num_venues)
 
-  alpha = 0.3
   while !meetings.empty?
     rcl = []
     min, max = meetings.minmax_by {|m| m[:saturation_degree] }
@@ -342,7 +341,7 @@ def calculate_fitness!(timetables, num_periods, num_venues)
 end
 
 def search(requirements, num_teachers, num_classes, num_venues, num_periods,
-           max_gens, pop_size, mutation_swaps, scm_size, tournament_size)
+           max_gens, pop_size, mutation_swaps, scm_size, tournament_size, alpha)
   #puts "beginning search..."
   #puts "generate meetings"
   meetings = generate_requirements_list(requirements, num_teachers, num_classes, num_venues)
@@ -350,11 +349,10 @@ def search(requirements, num_teachers, num_classes, num_venues, num_periods,
 
   #puts "generate initial population"
   population = []
-  alpha = 0.3
   pop_size.times do
     candidates = []
     scm_size.times do
-      candidates << sequential_construction_method(meetings, num_periods, num_venues)
+      candidates << sequential_construction_method(meetings, num_periods, num_venues, alpha)
     end
     calculate_fitness!(candidates, num_periods, num_venues)
 
@@ -372,7 +370,7 @@ def search(requirements, num_teachers, num_classes, num_venues, num_periods,
   #puts "beginning generations"
   best = population.sort_by {|timetable| timetable[:fitness] }.first
   max_gens.times do |gen|
-    #print "gen: #{gen}/#{max_gens}\r"
+    print "gen: #{gen}/#{max_gens}\r"
     selected = Array.new(pop_size){ tournament_selection(population, tournament_size, num_periods, num_venues)}
     children = reproduce(selected, mutation_swaps, num_periods, num_venues, num_classes, num_teachers)
     children.sort_by! {|timetable| timetable[:fitness] = fitness(timetable, num_periods, num_venues) }
@@ -415,6 +413,7 @@ if __FILE__ == $0
   scm_size = 1
   tournament_size = 10
   mutation_swaps = 10
+  greediness_factor = 0.3
 
   #requirements = generate_requirements(num_teachers, num_classes, num_venues, num_periods)
   #File.open('data/requirements.dat', 'w') {|file| file.write(Marshal.dump(requirements)) }
@@ -426,8 +425,9 @@ if __FILE__ == $0
     srand rand(999)
     best = nil
     bm = Benchmark.measure do
-      best = search(requirements, num_teachers, num_classes, num_venues, num_periods,
-                    max_gens, pop_size, mutation_swaps, scm_size, tournament_size)
+      best = search(requirements, num_teachers, num_classes, num_venues,
+                    num_periods, max_gens, pop_size, mutation_swaps, scm_size,
+                    tournament_size, greediness_factor)
     end
     File.open("results/pop_#{pop_size}/#{problem}/result_#{i}.txt", "w") do |file|
       file.write("fitness: #{best[:fitness]}\n")

@@ -1,5 +1,25 @@
 
-pop_size = 20
+module Enumerable
+  def sum
+    return self.inject(0){|accum, i| accum + i }
+  end
+
+  def mean
+    return self.sum / self.length.to_f
+  end
+
+  def sample_variance
+    m = self.mean
+    sum = self.inject(0){|accum, i| accum + (i - m) ** 2 }
+    return sum / (self.length - 1).to_f
+  end
+
+  def standard_deviation
+    return Math.sqrt(self.sample_variance)
+  end
+end
+
+pop_size = ARGV[0] || 20
 
 old_fit  = []
 old_time = []
@@ -21,16 +41,15 @@ regex = /fitness: (\d+)\n.*\( ?(\d+\.\d+)\)\n/
   new_time << $2.to_f
 end
 
-old_fit_avg  = old_fit. inject(&:+) / old_fit.length
-old_time_avg = old_time.inject(&:+) / old_fit.length
-
-new_fit_avg  = new_fit. inject(&:+) / new_fit.length
-new_time_avg = new_time.inject(&:+) / new_fit.length
-
 puts "Old:"
-puts "Average fitness: #{old_fit_avg}"
-puts "Average time:    #{old_time_avg}"
+puts "Average fitness:             #{old_fit.mean}"
+puts "Fitness standard devitation: #{old_fit.standard_deviation}"
+puts "Average time:                #{old_time.mean}"
+puts "Time standard deviation:     #{old_time.standard_deviation}"
+puts
 
 puts "New:"
-puts "Average fitness: #{new_fit_avg}"
-puts "Average time:    #{new_time_avg}"
+puts "Average fitness:             #{new_fit.mean}"
+puts "Fitness standard devitation: #{new_fit.standard_deviation}"
+puts "Average time:                #{new_time.mean}"
+puts "Time standard deviation:     #{new_time.standard_deviation}"

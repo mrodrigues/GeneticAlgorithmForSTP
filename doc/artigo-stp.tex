@@ -1,10 +1,10 @@
 \documentclass{article}
+\usepackage{hyperref}
 \usepackage{blindtext}
 \usepackage{amsmath}
 \usepackage[brazil]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage{natbib}
-%\usepackage{cite}
 
 \def\foreign#1{%
   \ifcsname TERM#1\endcsname%
@@ -24,6 +24,9 @@
 \text
 
 \section{Introdução}
+Todos o material utilizado neste estudo está hospedado em \cite{Github},
+incluindo o código do algoritmo, dados de entrada e resultados.
+
 \section{Trabalhos Relacionados}
 \section{Definição do Problema}
 Seja um conjunto T de professores, um conjunto C de turmas, um conjunto V de
@@ -57,7 +60,8 @@ pesadas.
 
 \section{Algoritmo Genético para o School Timetabling Problem}
 Este trabalho foi baseado no algoritmo desenvolvido em
-\cite{Raghavjee:2008:GASTP}, introduzindo aleatoriedade em seus elementos
+\cite{Raghavjee:2008:GASTP}, usando como base o algoritmo genético em
+\cite{Clever}, introduzindo aleatoriedade em seus elementos
 \foreign{greedy}. Isto ocorre em dois pontos durante a construção da população
 inicial: na seleção da melhor tupla para ser alocada, no \foreign{sequential
 construction method} (SCM), e na seleção do melhor indivíduo para ser inserido
@@ -110,7 +114,8 @@ linguagem utilizada foi Ruby versão 2.0.0p247. Os dados de entrada foram gerado
 aleatoriamente a partir dos parâmetros definidos abaixo, uma vez que não foi
 possível encontrar os dados do problema original, e reutilizados em todos os
 testes. Os parâmetros foram os mesmos que os utilizados em
-\cite{Raghavjee:2008:GASTP}, exceto o tamanho da população.
+\cite{Raghavjee:2008:GASTP}, exceto o tamanho da população e o fator de
+\foreign{greediness} introduzido.
 
 \begin{table}
   \caption{Características do Problema}
@@ -130,6 +135,7 @@ Tamanho da População & 20 e 100 \\
 M (tamanho do torneio) & 10 \\
  No. de Mutation Swaps & 20 \\
   No. Máximo de Gerações & 50 \\
+     Fator de Greediness & 0.3 \\
   \end{tabular}
 \end{table}
 

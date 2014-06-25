@@ -3,44 +3,47 @@ Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
 The top-level auxiliary file: artigo-stp.aux
 The style file: abbrv.bst
 Database file #1: research.bib
-You've used 1 entry,
+Warning--to sort, need author or key in Github
+Warning--to sort, need author or key in Clever
+You've used 3 entries,
             2118 wiz_defined-function locations,
-            507 strings with 4112 characters,
-and the built_in function-call counts, 490 in all, are:
-= -- 54
-> -- 13
+            516 strings with 4298 characters,
+and the built_in function-call counts, 816 in all, are:
+= -- 86
+> -- 15
 < -- 1
-+ -- 6
++ -- 8
 - -- 4
-* -- 29
-:= -- 75
-add.period$ -- 4
-call.type$ -- 1
-change.case$ -- 5
+* -- 41
+:= -- 111
+add.period$ -- 8
+call.type$ -- 3
+change.case$ -- 11
 chr.to.int$ -- 0
-cite$ -- 1
-duplicate$ -- 23
-empty$ -- 40
+cite$ -- 5
+duplicate$ -- 37
+empty$ -- 86
 format.name$ -- 4
-if$ -- 112
+if$ -- 194
 int.to.chr$ -- 0
-int.to.str$ -- 1
+int.to.str$ -- 3
 missing$ -- 1
-newline$ -- 8
+newline$ -- 16
 num.names$ -- 2
-pop$ -- 5
+pop$ -- 21
 preamble$ -- 1
-purify$ -- 4
+purify$ -- 8
 quote$ -- 0
-skip$ -- 20
+skip$ -- 34
 stack$ -- 0
-substring$ -- 38
-swap$ -- 10
+substring$ -- 48
+swap$ -- 12
 text.length$ -- 1
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 4
-warning$ -- 0
+type$ -- 12
+warning$ -- 2
 while$ -- 5
-width$ -- 2
-write$ -- 16
+width$ -- 4
+write$ -- 32
+(There were 2 warnings)
