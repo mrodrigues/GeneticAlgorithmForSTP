@@ -1,10 +1,13 @@
-\documentclass{article}
+\documentclass[12pt,a4paper]{article}
 \usepackage{hyperref}
+\usepackage{titling}
 \usepackage{blindtext}
 \usepackage{amsmath}
 \usepackage[brazil]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage{natbib}
+\usepackage{setspace}
+\usepackage{subfig}
 
 \def\foreign#1{%
   \ifcsname TERM#1\endcsname%
@@ -14,20 +17,84 @@
   \expandafter\gdef\csname TERM#1\endcsname{}%
 \fi}
 
+\newcommand{\myinfo}[2]{
+  \gdef\@myinfo{%
+    \begin{tabular}{ll}
+      \textit{E-mail:} & \url{marcosrodrigues@id.uff.br}\\
+      \textit{Curso:} & #2\\
+   \textit{Professor:} & #1
+    \end{tabular}
+    \par\vspace{12pt}
+  \textsc{Departamento de Ciência da Computação, Universidade Federal Fluminense}}
+}
+% add the extra information after the date
+\postdate{\par\vspace{12pt}\@myinfo\end{center}}
 
-\title{Algoritmo Genético para o School Timetabling Problem}
+\captionsetup{belowskip=12pt,aboveskip=4pt,labelfont=bf,textfont={bf,it}}
+
+\title{Introduzindo variedade na população inicial de um Algoritmo Genético para
+o School Timetabling Problem}
 \author{Marcos Felipe P. Rodrigues}
+\myinfo{Luiz Satoru Ochi}{Pesquisa Operacional}
 \date{\today}
 
+\singlespacing
 \begin{document}
 \maketitle
 \text
 
 \section{Introdução}
-Todos o material utilizado neste estudo está hospedado em \cite{Github},
-incluindo o código do algoritmo, dados de entrada e resultados.
+O \foreign{School Timetabling Problem} (STP) é um problema discreto,
+combinatorial, considerado NP-árduo para quase todas as suas variantes, que
+trata do encontro de professores com estudantes, garantindo que certas
+restrições e requerimentos sejam cumpridos. Uma solução manual deste problema
+levar dias ou até semanas para executar, e normalmente produz resultados
+insatisfatórios devido à conflitos com necessidades pedagógicas, entre outros
+\cite{Santos:2004:TSSTP}. Dessa forma, é comum na literatura encontrar
+metaheurísticas aplicadas com sucesso à esse problema.
+
+Este trabalho busca aprimorar o algoritmo genético de Raghavjee
+\cite{Raghavjee:2008:GASTP}, ao uma introduzir aleatoriedade controlada em sua
+fase de construção da população inicial. Devido ao alto nível de restrições do
+problema, uma construção puramente aleatória demoraria muito para, ou nem mesmo
+conseguiria, convergir; por isso, o trabalho anterior utilizou um método que
+busca minimizar os conflitos antes de iniciar-se o ciclo de reprodução.
+Entretanto, a única variedade produzida nessa população inicial ocorreria ao
+tornar-se impossível evitar o conflito; este trabalho apresenta uma alternativa,
+em que um candidato é escolhido dentre uma seleção de melhores opções. Todo o
+material utilizado neste estudo está hospedado em \cite{Github}, incluindo o
+código do algoritmo, dados de entrada e resultados.
 
 \section{Trabalhos Relacionados}
+Como as características do STP são altamente dependentes do local onde o
+algoritmo será implantado, às vezes variando entre instituições de um mesmo
+país, não há um modelo largamente aceito na literatura \cite{Santos:2004:TSSTP}.
+Portanto, embora este seja um problema clássico, mesmo algoritmos e heurísticas
+semelhantes podem usar modelagens distintas.
+
+Brito et al. \cite{Brito:2012:SAVNS} usa o Kingston's High School Timetabling
+Engine (KHE) \cite{Kingston:KHE} para gerar as soluções iniciais, cujas
+instâncias representam um formato XML. Em seguida, usa uma metaheurística
+Simulated Annealing para aprimorar a solução inicial, e então aplica uma busca
+local usando Variable Neighborhood Search. Santos et al.
+\cite{Santos:2004:TSSTP} utiliza como modelagem tabelas cujas linhas representam
+professores e as colunas, períodos, que simultaneamente impede conflitos de
+períodos para os professores e permite a definição de horários indisponíveis em
+suas agendas. Sua função objetivo consiste de uma soma de restrições leves e
+pesadas, com apropriados pesos para cada. As soluções iniciais são construídas
+através de um \foreign{greedy randomized constructive procedure}, e então é
+realizada uma Tabu Search, evitando assim que se repitam movimentos recentes.
+
+Raghavjee et al. \cite{Raghavjee:2008:GASTP} utiliza também uma modelagem
+baseada em tabelas, mas as linhas são períodos e as colunas, salas de aula, e
+neste caso há apenas restrições pesadas. Após uma pesada fase de construção que
+garante a alocação de todos os encontros entre professores e alunos, é utilizado
+um Genetic Algorithm para buscar uma solução possível. Em seu estudo, Raghavjee
+mostra como essa solução foi capaz de se igualar, e até superar, heurísticas
+Simulated Annealing, Tabu Search e redes neurais. Devido à estas considerações,
+um interesse profissional pela modelagem com salas de aula e um fascínio pessoal
+por algoritmos genéticos, este estudo foi a base do presente trabalho.
+
 \section{Definição do Problema}
 Seja um conjunto T de professores, um conjunto C de turmas, um conjunto V de
 salas de aulas e um número P de períodos semanais. Dada uma lista de
@@ -60,12 +127,13 @@ pesadas.
 
 \section{Algoritmo Genético para o School Timetabling Problem}
 Este trabalho foi baseado no algoritmo desenvolvido em
-\cite{Raghavjee:2008:GASTP}, usando como base o algoritmo genético em
-\cite{Clever}, introduzindo aleatoriedade em seus elementos
+\cite{Raghavjee:2008:GASTP}, usando como base o algoritmo genético
+disponibilizado em \cite{Clever}, introduzindo aleatoriedade em seus elementos
 \foreign{greedy}. Isto ocorre em dois pontos durante a construção da população
 inicial: na seleção da melhor tupla para ser alocada, no \foreign{sequential
 construction method} (SCM), e na seleção do melhor indivíduo para ser inserido
-na população.
+na população. O algoritmo não utiliza \foreign{crossover}, devido à natureza
+altamente restritiva do problema.
 
   \subsection{Construção}
   Inicialmente, é gerada uma lista de encontros, de acordo com os
@@ -77,12 +145,14 @@ na população.
   A construção é feita executando-se um número n pré-definido de vezes o
   algoritmo SCM. Para cada iteração de zero até n, é gerada uma solução
   candidata, a qual é inserida num conjunto L de candidatas. Ao final,
-  constrói-se uma \foreign{restricted candidate list} (RCL), definida por RCL =
-  $ \{ l_{ij} \in L | fitness(l) \leq max\_fitness(L) - alpha \times (max\_fitness(L) - min\_fitness(L)) \} $,
-  sendo $ max\_fitness $ e $ min\_fitness $, respectivamente, as funções que retornam a
-  menor e a maior aptidão da lista. O valor $ alpha $ é o fator de
-  \foreign{greediness}, variando de puramente \foreign{greedy} ($ alpha = 0 $) até
-  puramente aleatória ($ alpha = 1 $).
+  constrói-se uma \foreign{restricted candidate list} (RCL), definida por:
+  \[
+  RCL = \{ l_{ij} \in L | fitness(l) \leq max\_fit(L) - \alpha \times (max\_fit(L) - min\_fit(L)) \}
+  \]
+  Sendo $ max\_fit $ e $ min\_fit $, respectivamente, as funções que retornam a
+  menor e a maior aptidão da lista. O valor $ \alpha $ é o fator de
+  \foreign{greediness}, variando de puramente \foreign{greedy} ($ \alpha = 0 $) até
+  puramente aleatória ($ \alpha = 1 $).
 
   O algoritmo SCM classifica as tuplas em ordem decrescente de grau de
   saturação, i.e., o número de períodos nos quais a tupla pode ser alocada sem
@@ -106,16 +176,27 @@ na população.
   torneio real, no qual há um fator sorte envolvido.
 
   \subsection{Mutação}
-  Ver \cite{Raghavjee:2008:GASTP}.
+  O operador de mutação, primeiro, escolhe aleatoriamente fazer uma alteração na
+  tabela dos professores ou das turmas do indivíduo. Então, é selecionada uma
+  linha que contenha um conflito. Como um conflito ocorre quando há dois
+  professores/turmas num mesmo período, pode-se calcular qual é o
+  professor/turma faltante. Deste modo, busca-se uma linha que contenha o
+  elemento faltante \textbf{em uma das salas onde houve conflito}, e realiza-se
+  a troca. Deste modo, garante-se a integridade dos requerimentos. Caso não seja
+  encontrada nenhuma linha apropriada, a troca é realizada em outra qualquer,
+  mesmo que não haja conflito. Este processo é realizado um número $Mutation
+  Swaps$ de vezes. Caso o filho gerado por essa mutação tenha fitness pior que o
+  pai, é descartado e o pai é copiado para a próxima geração.
+
 \section{Configuração}
 Os testes foram realizados em uma máquina com 2498MB de RAM, processador AMD de
 32 bits de barramento, com dois \foreign{cores} e 1.9Ghz de \foreign{clock}. A
-linguagem utilizada foi Ruby versão 2.0.0p247. Os dados de entrada foram gerados
-aleatoriamente a partir dos parâmetros definidos abaixo, uma vez que não foi
-possível encontrar os dados do problema original, e reutilizados em todos os
-testes. Os parâmetros foram os mesmos que os utilizados em
-\cite{Raghavjee:2008:GASTP}, exceto o tamanho da população e o fator de
-\foreign{greediness} introduzido.
+linguagem utilizada foi Ruby versão 2.0.0p247, com o interpretador MRI. Os dados
+de entrada foram gerados aleatoriamente a partir dos parâmetros definidos
+abaixo, uma vez que não foi possível encontrar os dados do problema original, e
+reutilizados em todos os testes. Os parâmetros foram os mesmos que os utilizados
+em \cite{Raghavjee:2008:GASTP}, exceto o fator de \foreign{greediness}
+introduzido.
 
 \begin{table}
   \caption{Características do Problema}
@@ -131,42 +212,47 @@ testes. Os parâmetros foram os mesmos que os utilizados em
   \centering
   \begin{tabular}{ c c }
     N (tamanho do SCM) & 1 \\
-Tamanho da População & 20 e 100 \\
+Tamanho da População & 20, 100 e 1001\\
 M (tamanho do torneio) & 10 \\
  No. de Mutation Swaps & 20 \\
   No. Máximo de Gerações & 50 \\
-     Fator de Greediness & 0.3 \\
+        Fator de Greediness & 0.3 \\
   \end{tabular}
 \end{table}
 
 \section{Resultados Computacionais}
-A versão modificada foi capaz de melhorar a solução nos dois casos verificados,
-em troca de uma performance ligeiramente mais lenta. Os testes foram executados
-10 vezes cada, usando um diferente \foreign{seed} para a geração de números
-aleatórios a cada vez.
+A versão modificada foi capaz de melhorar a solução em todos os casos
+verificados, em troca de uma performance ligeiramente mais lenta. Apenas com a
+população de 1001 indivíduos o algoritmo original conseguiu alcançar o mesmo
+melhor resultado que a versão modificada, a qual teve até mesmo uma menor média
+de tempo com a população de 100 indivíduos. Os testes foram executados 10 vezes
+cada, usando um diferente \foreign{seed} para a geração de números aleatórios a
+cada vez.
 
 \begin{table}
   \caption{Média do tempo e do fitness de acordo com a população}
   \centering
-  \begin{tabular}{ r c c c }
-    Algoritmo & Tamanho da População & Média do fitness & Média do tempo \\
-     original & 100 & 16.2 & 116.317 \\
-   modificado & 100 & 15.2 & 126.315 \\
-     original &  20 & 17.6 & 20.747 \\
-   modificado &  20 & 16.4 & 22.394 \\
+  \begin{tabular}{ r r r r r r r }
+    Algoritmo & pop size & fitness avg & best fitness & fitness SD & time avg & time SD \\
+     original &   20 & 17.6 & 16 & 1.075 &   20.747 &  0.238 \\
+   modificado &   20 & 16.4 & 14 & 1.506 &   22.394 &  0.350 \\
+     original &  100 & 16.2 & 15 & 0.632 &  116.317 &  4.336 \\
+   modificado &  100 & 15.3 & 14 & 0.949 &  113.903 &  2.237 \\
+     original & 1001 & 14.4 & 13 & 0.966 & 1037.548 & 20.070 \\
+   modificado & 1001 & 13.4 & 13 & 0.516 & 1130.555 & 41.300 \\
   \end{tabular}
 \end{table}
 
-\section{Discussão e Conclusão}
+\section{Conclusão}
 Em nenhum dos casos foi possível chegar à uma solução possível, como foi
 atingido em \cite{Raghavjee:2008:GASTP}. Isto pode ser devido à diferenças de
 implementação do algoritmo, ou à geração aleatória dos dados de entrada. De
-qualquer forma, é necessária maior investigação. Apesar disso, os resultados
-foram melhores após a introdução da aleatoriedade nas seções \foreign{greedy},
-às custas de uma maior lentidão no algoritmo, o que indica que o original não
-era capaz de gerar variedade o suficiente.
+qualquer forma, é necessária maior investigação para que se possa utilizar esta
+solução. Apesar disso, os resultados foram melhores após a introdução da
+aleatoriedade nas seções \foreign{greedy}, às custas de uma maior lentidão no
+algoritmo, o que indica que o original não era capaz de gerar variedade o
+suficiente.
 
-\section{Trabalhos Futuros}
 Para os próximos passos, seria interessante introduzir outros requerimentos no
 algoritmo, de modo a tornar a aplicação mais flexível. Restrições como períodos
 indisponíveis para os professores, e requisitos pedagógicos como uma turma não
@@ -176,8 +262,8 @@ modificado, de modo que o prejuízo de tempo seja menor.
 
 Por fim, mais testes são necessários, com diferentes dados de entrada. Os dados
 coletados são poucos para confirmar que as modificações trouxeram benefícios em
-todos os casos. Também é necessário investigar o motivo de não ter sido possível
-alcançar uma solução possível
+todos os casos. Principalmente, é necessário investigar o motivo de não ter sido
+possível alcançar uma solução possível.
 
 \bibliography{research}
 \bibliographystyle{abbrv}

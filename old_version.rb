@@ -379,7 +379,7 @@ if __FILE__ == $0
   # algorithm configuration
   max_gens = 50
   num_periods = 30
-  pop_size = 100
+  pop_size = 1001
   scm_size = 1
   tournament_size = 10
   mutation_swaps = 10

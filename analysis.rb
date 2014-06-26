@@ -43,6 +43,7 @@ end
 
 puts "Old:"
 puts "Average fitness:             #{old_fit.mean}"
+puts "Best fitness:                #{old_fit.min}"
 puts "Fitness standard devitation: #{old_fit.standard_deviation}"
 puts "Average time:                #{old_time.mean}"
 puts "Time standard deviation:     #{old_time.standard_deviation}"
@@ -50,6 +51,7 @@ puts
 
 puts "New:"
 puts "Average fitness:             #{new_fit.mean}"
+puts "Best fitness:                #{new_fit.min}"
 puts "Fitness standard devitation: #{new_fit.standard_deviation}"
 puts "Average time:                #{new_time.mean}"
 puts "Time standard deviation:     #{new_time.standard_deviation}"

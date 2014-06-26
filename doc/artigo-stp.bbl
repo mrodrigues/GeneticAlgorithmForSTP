@@ -1,11 +1,24 @@
 \begin{thebibliography}{1}
 
+\bibitem{Brito:2012:SAVNS}
+S.~S. Brito, G.~H.~G. Fonseca, T.~A.~M. Toffolo, H.~G. Santos, and M.~J.~F.
+  Souza.
+\newblock A sa-vns approach for the high school timetabling problem.
+\newblock {\em Electronic Notes in Discrete Mathematics}, 39:169--176, 2012.
+
 \bibitem{Clever}
-Clever algorithms.
+{Jason Brownlee}.
+\newblock Clever algorithms.
 \newblock \url{http://cleveralgorithms.com/nature-inspired/index.html}, 2014.
 
+\bibitem{Kingston:KHE}
+{Jeffrey H. Kingston}.
+\newblock A software library for high school timetabling.
+\newblock \url{http://sydney.edu.au/engineering/it/~jeff/khe/}.
+
 \bibitem{Github}
-Repositório do projeto.
+{Marcos Rodrigues}.
+\newblock Repositório do projeto.
 \newblock \url{https://github.com/mrodrigues/GeneticAlgorithmForSTP}, 2014.
 
 \bibitem{Raghavjee:2008:GASTP}
@@ -16,5 +29,12 @@ R.~Raghavjee and N.~Pillay.
   South African Institute of Computer Scientists and Information Technologists
   on IT Research in Developing Countries: Riding the Wave of Technology},
   SAICSIT '08, pages 193--199, New York, NY, USA, 2008. ACM.
+
+\bibitem{Santos:2004:TSSTP}
+H.~G. Santos, L.~S. Ochi, and M.~J.~F. Souza.
+\newblock An efficient tabu search heuristic for the school timetabling
+  problem.
+\newblock In C.~C. Ribeiro and S.~L. Martins, editors, {\em WEA}, volume 3059
+  of {\em Lecture Notes in Computer Science}, pages 468--481. Springer, 2004.
 
 \end{thebibliography}
